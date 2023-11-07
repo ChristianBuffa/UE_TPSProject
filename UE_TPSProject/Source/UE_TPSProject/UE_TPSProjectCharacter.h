@@ -110,6 +110,14 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FGameStateCharacter OnCharacterTraceLine;
 
+	/** Broadcsted when character starts sprinting */
+	UPROPERTY(BlueprintAssignable)
+	FGameStateCharacter OnCharacterStartSprint;
+
+	/** Broadcsted when character stops sprinting */
+	UPROPERTY(BlueprintAssignable)
+	FGameStateCharacter OnCharacterEndSprint;
+	
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseTurnRate;
@@ -117,6 +125,10 @@ public:
 	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
+
+	/** Walk speed while sprinting */
+	UPROPERTY(EditAnywhere, Category = "Sprint")
+	float MaxSpeedSprinting = 700.0f;
 	
 	/** Walk speed while aiming. */
 	UPROPERTY(EditAnywhere, Category = "Aim")
@@ -166,6 +178,8 @@ private:
 	bool bIsUsingWeapon = false;
 
 	bool bCanMove = false;
+
+	bool bIsSprinting = false;
 	
 	/** Timeline use for aiming: change the visual from 360 to right shoulder*/
 	FTimeline AimTimeline;
@@ -219,14 +233,14 @@ protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
-	
-	// Mechanic: Jump
-	void JumpCharacter();
-	void StopJumpingCharacter();
 
 	// Mechanic: Crouch
 	void CrouchCharacter();
 	void StopCrouchCharacter();
+
+	// Mechanic: Sprint
+	void StartSprint();
+	void EndSprint();
 
 	// Mechanic: Aim
 	void AimInWeapon();
@@ -236,8 +250,6 @@ protected:
 
 	// Mechanic: Reload
 	void ReloadWeapon();
-
-	// 
 
 public:
 	

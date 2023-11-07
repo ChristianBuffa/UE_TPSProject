@@ -9,7 +9,6 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
 
-//////////////////////////////////////////////////////////////////////////
 // ATP_ThirdPersonCharacter
 
 AUE_TPSProjectCharacter::AUE_TPSProjectCharacter() {
@@ -99,7 +98,6 @@ void AUE_TPSProjectCharacter::Tick(float DeltaTime) {
 	AutomaticFire(DeltaTime);
 }
 
-//////////////////////////////////////////////////////////////////////////
 // Timeline management
 
 void AUE_TPSProjectCharacter::HandleProgressArmLength(float Length) {
@@ -114,15 +112,15 @@ void AUE_TPSProjectCharacter::HandleProgressCrouch(float Height) {
 	ActualEight = Height;
 }
 
-//////////////////////////////////////////////////////////////////////////
 // Input
 
 void AUE_TPSProjectCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) {
 	// Set up gameplay key bindings
 	check(PlayerInputComponent);
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AUE_TPSProjectCharacter::JumpCharacter);
-	PlayerInputComponent->BindAction("Jump", IE_Released, this, &AUE_TPSProjectCharacter::StopJumpingCharacter);
 
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &AUE_TPSProjectCharacter::StartSprint);
+	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &AUE_TPSProjectCharacter::EndSprint);
+	
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AUE_TPSProjectCharacter::CrouchCharacter);
 	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &AUE_TPSProjectCharacter::StopCrouchCharacter);
 	
@@ -146,7 +144,6 @@ void AUE_TPSProjectCharacter::SetupPlayerInputComponent(class UInputComponent* P
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AUE_TPSProjectCharacter::LookUpAtRate);
 }
 
-//////////////////////////////////////////////////////////////////////////
 // Movement and rotation
 
 void AUE_TPSProjectCharacter::TurnAtRate(float Rate) {
@@ -187,10 +184,12 @@ void AUE_TPSProjectCharacter::MoveRight(float Value) {
 	}
 }
 
-//////////////////////////////////////////////////////////////////////////
 // Mechanic: Aim
 
 void AUE_TPSProjectCharacter::AimInWeapon() {
+	if(bIsSprinting)
+		return;
+	
 	if (!bIsUsingArch) {
 		bIsUsingWeapon = true;
 		AimIn();
@@ -203,6 +202,9 @@ void AUE_TPSProjectCharacter::AimOutWeapon() {
 }
 
 void AUE_TPSProjectCharacter::AimIn() {
+	if(bIsSprinting)
+		return;
+	
 	GEngine->AddOnScreenDebugMessage(-1, 0.2f, FColor::Green, TEXT("Aim In"));
 	bUseControllerRotationYaw = true;
 	GetCharacterMovement()->bOrientRotationToMovement = false;
@@ -217,6 +219,9 @@ void AUE_TPSProjectCharacter::AimIn() {
 }
 
 void AUE_TPSProjectCharacter::AimOut() {
+	if(bIsSprinting)
+		return;
+	
 	GEngine->AddOnScreenDebugMessage(-1, 0.2f, FColor::Green, TEXT("Aim Out"));
 	bUseControllerRotationYaw = false;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
@@ -230,20 +235,6 @@ void AUE_TPSProjectCharacter::AimOut() {
 	OnCharacterStopAim.Broadcast();
 }
 
-//////////////////////////////////////////////////////////////////////////
-// Mechanic: Jump
-
-void AUE_TPSProjectCharacter::JumpCharacter() {
-	if (CanJump()) {
-		Jump();
-		GEngine->AddOnScreenDebugMessage(-1, 0.2f, FColor::Green, TEXT("jumping"));
-	}
-}
-
-void AUE_TPSProjectCharacter::StopJumpingCharacter() {
-	StopJumping();
-}
-
 void AUE_TPSProjectCharacter::Landed(const FHitResult& Hit) {
 	GEngine->AddOnScreenDebugMessage(-1, 0.2f, FColor::Green, TEXT("landed"));
 	OnCharacterLanding.Broadcast();
@@ -255,10 +246,39 @@ void AUE_TPSProjectCharacter::OnJumped_Implementation() {
 	OnCharacterJumping.Broadcast();
 }
 
-//////////////////////////////////////////////////////////////////////////
+// Mechanic: Sprint
+
+void AUE_TPSProjectCharacter::StartSprint()
+{
+	if(bIsAiming)
+		AimOut();
+
+	if(bIsCrouched)
+		StopCrouchCharacter();
+
+	if(bIsFiring)
+		StopFire();
+	
+	
+	bIsSprinting = true;
+	GEngine->AddOnScreenDebugMessage(-1, 0.2f, FColor::Green, TEXT("Sprinting"));
+	GetCharacterMovement()->MaxWalkSpeed = MaxSpeedSprinting;
+	OnCharacterStartSprint.Broadcast();
+}
+
+void AUE_TPSProjectCharacter::EndSprint()
+{
+	bIsSprinting = false;
+	GEngine->AddOnScreenDebugMessage(-1, 0.2f, FColor::Green, TEXT("End Sprinting"));
+	GetCharacterMovement()->MaxWalkSpeed = MaxSpeedWalkingOrig;
+	OnCharacterEndSprint.Broadcast();
+}
+
 // Mechanic: Crouch
 
 void AUE_TPSProjectCharacter::CrouchCharacter() {
+	if(bIsSprinting)
+		return;
 	
 	if (CanCrouch()) {
 		GEngine->AddOnScreenDebugMessage(-1, 0.2f, FColor::Green, TEXT("Crouch in"));
@@ -277,11 +297,10 @@ void AUE_TPSProjectCharacter::StopCrouchCharacter() {
 	}
 }
 
-//////////////////////////////////////////////////////////////////////////
 // Mechanic: Fire with weapon
 
 void AUE_TPSProjectCharacter::FireFromWeapon() {
-	if(bIsReloading){
+	if(bIsReloading || bIsSprinting){
 		return;
 	}
 	
@@ -355,12 +374,10 @@ FWeaponSlot AUE_TPSProjectCharacter::RetrieveActiveWeapon() {
 	return Arsenal[ActiveWeapon];
 }
 
-
-//////////////////////////////////////////////////////////////////////////
 // Mechanic: Reload
 
 void AUE_TPSProjectCharacter::ReloadWeapon() {
-	if(bIsReloading || MagBullets >= Arsenal[ActiveWeapon].MagCapacity){
+	if(bIsReloading || MagBullets >= Arsenal[ActiveWeapon].MagCapacity || bIsSprinting){
 		return;
 	}
 	
@@ -381,7 +398,6 @@ int AUE_TPSProjectCharacter::MagCounter() {
 	return MagBullets;
 }
 
-//////////////////////////////////////////////////////////////////////////
 // Utilities
 
 void AUE_TPSProjectCharacter::EnablePlayerInput(bool Enabled) {
