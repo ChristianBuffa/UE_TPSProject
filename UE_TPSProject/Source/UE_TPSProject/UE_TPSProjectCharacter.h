@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/TimelineComponent.h"
 #include "GameFramework/Character.h"
+#include "UE_TPSProject/HealthComponent.h"
 #include "Logging/LogMacros.h"
 #include "UE_TPSProjectCharacter.generated.h"
 
@@ -74,6 +75,8 @@ class AUE_TPSProjectCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon", meta = (AllowPrivateAccess = "true") )
 	UStaticMeshComponent* WeaponMesh;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health", meta = (AllowPrivateAccess = "true"))
+	UHealthComponent* HealthComponent;
 
 public:
 	AUE_TPSProjectCharacter();
@@ -198,6 +201,9 @@ private:
 
 	UFUNCTION()
 	void HandleProgressCrouch(float Height);
+
+	UFUNCTION()
+	void StopCharacter();
 	
 	void EnablePlayerInput(bool Enabled);
 
@@ -278,6 +284,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "TPS")
 	FWeaponSlot RetrieveActiveWeapon();
+
+	UFUNCTION(BlueprintCallable, Category = "Health")
+	FORCEINLINE class UHealthComponent* GetHealthComponent() const { return HealthComponent; }
 
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }

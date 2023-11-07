@@ -4,6 +4,7 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
+#include "UE_TPSProject/HealthComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -46,6 +47,9 @@ AUE_TPSProjectCharacter::AUE_TPSProjectCharacter() {
 	// Add a mesh for the weapon
 	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
 	WeaponMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, "hand_rSocket");
+
+	//Add component for Health management
+	HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("Health Component"));
 	
 	//Set other variabled
 	ActiveWeapon = 0;
@@ -80,6 +84,8 @@ void AUE_TPSProjectCharacter::BeginPlay() {
 		ProgressFunctionCrouch.BindUFunction(this, "HandleProgressCrouch");
 		CrouchTimeline.AddInterpFloat(CrouchCurve, ProgressFunctionCrouch);
 	}
+
+	HealthComponent->OnHealtToZero.AddDynamic(this, &AUE_TPSProjectCharacter::StopCharacter);
 }
 
 void AUE_TPSProjectCharacter::OnConstruction(const FTransform & Transform) {
@@ -230,6 +236,7 @@ void AUE_TPSProjectCharacter::AimOut() {
 	if (bIsInCover) {
 		GEngine->AddOnScreenDebugMessage(-1, 0.2f, FColor::Green, TEXT("Stop aim from cover"));
 		CrouchCharacter();
+		
 	}
 	AimTimeline.Reverse();
 	OnCharacterStopAim.Broadcast();
@@ -329,6 +336,11 @@ void AUE_TPSProjectCharacter::FireFromWeapon() {
 	if (bHit) {
 		DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 3.0f);
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), Arsenal[ActiveWeapon].HitEFX, Hit.ImpactPoint);
+		APawn* HitActor = Cast<APawn>(Hit.GetActor());
+		
+		if (HitActor) {
+			
+		}
 	}
 
 	UGameplayStatics::PlaySound2D(this, Arsenal[ActiveWeapon].SoundEFX, 1.0f, 1.0f, 0);
@@ -399,6 +411,15 @@ int AUE_TPSProjectCharacter::MagCounter() {
 }
 
 // Utilities
+
+void AUE_TPSProjectCharacter::StopCharacter() {
+	HealthComponent->OnHealtToZero.RemoveDynamic(this, &AUE_TPSProjectCharacter::StopCharacter);
+	if (bIsAiming) {
+		AimOut();
+	}
+	
+	EnablePlayerInput(false);
+}
 
 void AUE_TPSProjectCharacter::EnablePlayerInput(bool Enabled) {
 	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
