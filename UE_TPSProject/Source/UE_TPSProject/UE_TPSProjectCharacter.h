@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/TimelineComponent.h"
+#include "FWeaponSlot.h"
 #include "GameFramework/Character.h"
 #include "UE_TPSProject/HealthComponent.h"
 #include "Logging/LogMacros.h"
@@ -14,44 +15,6 @@ class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
-
-USTRUCT(BlueprintType)
-struct FWeaponSlot
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UStaticMesh *WeaponMesh;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int MagCapacity;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool IsAutomatic;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float Rate;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float Damage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float Range;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float HitRadius;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float Offset;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UParticleSystem* HitEFX;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	USoundBase* SoundEFX;
-	
-	//FWeaponSlot();
-};
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FGameStateCharacter);
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
