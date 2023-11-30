@@ -1,6 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "UE_TPSProjectCharacter.h"
+
+#include "Enemy.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
@@ -336,10 +338,10 @@ void AUE_TPSProjectCharacter::FireFromWeapon() {
 	if (bHit) {
 		DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 3.0f);
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), Arsenal[ActiveWeapon].HitEFX, Hit.ImpactPoint);
-		APawn* HitActor = Cast<APawn>(Hit.GetActor());
+		AEnemy* HitActor = Cast<AEnemy>(Hit.GetActor());
 		
 		if (HitActor) {
-			
+			HitActor->GetHealthComponent()->GetDamage(Arsenal[ActiveWeapon].Damage);
 		}
 	}
 

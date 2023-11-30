@@ -35,6 +35,7 @@ AEnemyAIController::AEnemyAIController() {
 	PerceptionComponent->ConfigureSense(*HearingConfig); // 1
 	PerceptionComponent->SetDominantSense(SightConfig->GetSenseImplementation());
 
+	AlertedSpeed = 500;
 	PlayerCharacter = nullptr;
 }
 
@@ -52,7 +53,7 @@ void AEnemyAIController::BeginPlay() {
 		// Set the character's walk speed
 		GetBlackboardComponent()->SetValueAsFloat("OriginalWalkSpeed", ControlledPawn->GetCharacterMovement()->MaxWalkSpeed);
 	}
-	
+
 	// Add OnPerceptionUpdate_SenseManagement to the UE4's perception component
 	PerceptionComponent->OnPerceptionUpdated.AddDynamic(this, &AEnemyAIController::OnPerceptionUpdate_SenseManagement);
 }
@@ -74,6 +75,12 @@ void AEnemyAIController::StopAI() {
 
 void AEnemyAIController::DetectPlayer() {
 	GetBlackboardComponent()->SetValueAsBool("SeePlayer", true);
+	AEnemy* ControlledPawn = dynamic_cast<AEnemy*>(GetPawn());
+
+	if(!IsValid(ControlledPawn))
+		return;
+
+	ControlledPawn->GetCharacterMovement()->MaxWalkSpeed = AlertedSpeed;
 	
 	if(!IsValid(PlayerCharacter))
 		return;
@@ -103,6 +110,10 @@ void AEnemyAIController::OnPerceptionUpdate_SenseManagement(const TArray<AActor*
 					ManageHearing();
 				}
 			}
+		}
+		else
+		{
+			GetBlackboardComponent()->SetValueAsBool("IsAlerted", true);
 		}
 	}
 }

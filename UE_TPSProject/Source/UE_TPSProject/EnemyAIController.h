@@ -23,6 +23,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI: behaviour tree")
 	UBehaviorTree* BehaviourTree;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI: Movement")
+	float AlertedSpeed;
 	
 	/** Stop the AI job */
 	UFUNCTION()
@@ -44,7 +47,6 @@ protected:
 private:
 	UAISenseConfig_Sight* SightConfig;
 	UAISenseConfig_Hearing* HearingConfig;
-
 	AUE_TPSProjectCharacter* PlayerCharacter;
 
 	/** Function used to manege the sight sense*/
